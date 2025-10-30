@@ -64,7 +64,7 @@ if __name__ == "__main__":
         const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
         try {
-            const res = await fetch(`https://ideserver-5cns.onrender.com/run`, {
+            const res = await fetch(`https://ideserver-1.onrender.com/run`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ code, action: "run" }),
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
         try {
-            const res = await fetch(`https://ideserver-5cns.onrender.com/run`, {
+            const res = await fetch(`https://ideserver-1.onrender.com/run`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
