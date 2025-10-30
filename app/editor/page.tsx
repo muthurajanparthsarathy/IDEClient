@@ -92,9 +92,10 @@ if __name__ == "__main__":
         setIsRunning(true);
         setOutput("Running tests...");
         setTestResults([]);
+        const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
         try {
-            const res = await fetch("/api/run", {
+            const res = await fetch(`/${BACKEND}/run`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
