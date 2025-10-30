@@ -95,7 +95,7 @@ if __name__ == "__main__":
         const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
         try {
-            const res = await fetch(`/${BACKEND}/run`, {
+            const res = await fetch(`${BACKEND}/run`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
