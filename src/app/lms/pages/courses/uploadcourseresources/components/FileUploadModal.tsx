@@ -8,6 +8,7 @@ import {
   FolderOpen, Plus,
 } from "lucide-react";
 import type { HierarchyInfo } from "./Pagecreationmodal";
+import { getUploadErrorMessage } from "./uploadError";
 import TipTapEditor from "@/app/lms/component/tiptopEditor";
 import {
   buildAllowedRules, getFileExt, partitionFiles, fmtLimit,
@@ -510,6 +511,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     setProgressStep("Starting…");
     setCreationDone(false);
 
+    try {
     // Metadata-only / pure-deletion / pure-rename path for edit mode.
     // Trigger when there's nothing NEW to upload (seeded existing entries don't
     // count). This still calls onSubmit so the parent can process pending
@@ -519,8 +521,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     if (editMode && !hasNewFiles && !hasNewFolders) {
       setProgressStep("Saving…");
       const metaOpts: UploadOptions = { showToStudent, allowDownload, createdAt: new Date().toISOString() };
-      try { await onSubmit([], fileName.trim(), fileDescription.trim(), [...currentFolderPath], () => { }, metaOpts); }
-      catch { }
+      await onSubmit([], fileName.trim(), fileDescription.trim(), [...currentFolderPath], () => { }, metaOpts);
       // Second one (main upload path):
       setUploadProgress(100); setProgressStep("All done!"); setCreationDone(true);
       setTimeout(() => { setIsSubmitting(false); if (onSuccess) onSuccess(); else onClose(); }, 500);
@@ -590,14 +591,12 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       const fn = relPath[relPath.length - 1];
       setProgressStep(`Creating "${fn}"…`);
       const isTop = relPath.length === 1;
-      try {
         await onCreateFolder(fn, [...capturedBasePath, ...relPath.slice(0, -1)], {
           createdAt: uploadOptions.createdAt,
           parentGroupId: isTop ? effectiveGroupId : undefined,
           groupName: isTop ? uploadOptions.groupName : undefined,
           groupDescription: isTop ? uploadOptions.groupDescription : undefined,
         });
-      } catch { }
       finishTask(`"${fn}" created`);
     }
 
@@ -611,10 +610,8 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
         groupName: filesAtRoot ? uploadOptions.groupName : undefined,
         groupDescription: filesAtRoot ? uploadOptions.groupDescription : undefined,
       };
-      try {
         await onSubmit(files, hasFolders ? "" : capturedGroupName, capturedDescription,
           [...capturedBasePath, ...path], () => { }, perFileOpts);
-      } catch { }
       finishTask(files.length === 1 ? `"${files[0].name}" uploaded` : `${files.length} files uploaded`);
     }
 
@@ -634,7 +631,6 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     // queue gets flushed; nothing new is uploaded.
     if (editMode && capturedFileGroups.length === 0) {
       setProgressStep("Saving changes…");
-      try {
         await onSubmit(
           [],
           hasFolders ? "" : capturedGroupName,
@@ -643,11 +639,17 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           () => { },
           uploadOptions,
         );
-      } catch { }
     }
 
     setUploadProgress(100); setProgressStep("All done!"); setCreationDone(true);
     setTimeout(() => { setIsSubmitting(false); if (onSuccess) onSuccess(); else onClose(); }, 500);
+    } catch (error) {
+      setIsSubmitting(false);
+      setCreationDone(false);
+      setUploadProgress(0);
+      setProgressStep("Upload failed");
+      showModalToast(getUploadErrorMessage(error), false);
+    }
   };
 
   if (!isOpen) return null;

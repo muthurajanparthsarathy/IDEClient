@@ -49,6 +49,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SmartCliffRingLoader from "@/components/SmartCliffRingLoader";
 import axios from "axios";
+import { getUploadErrorMessage } from "./components/uploadError";
 import { showErrorToast, showSuccessToast } from "@/components/ui/toastUtils";
 import { studentRouteForCurrentCourse } from "../coursesdetailedview/components/useAccountMenu";
 import PDFViewer from "../components/pdfView";
@@ -2049,7 +2050,7 @@ const navigateToFolder = useCallback((folderId: string, folderName: string) => {
       });
       await fetchAndRefresh(selectedNode);
       // No success toast here — callers (modal, folder builder) show their own consolidated toast.
-    } catch { showErrorToast("Failed to create folder"); }
+    } catch (error) { throw error; }
   };
 
   // ── Folder Builder helpers ───────────────────────────────────────────────────
@@ -3105,7 +3106,7 @@ const handleNavigateToFolderLevel = useCallback(async (folderName: string, index
     } catch (err: any) {
       setUploadingFiles((prev) => prev.map((f) => f.status === "uploading" ? { ...f, status: "error" } : f));
       setIsButtonLoading(false);
-      const _msg = axios.isAxiosError(err) ? (typeof err.response?.data?.message === "string" ? err.response?.data?.message : JSON.stringify(err.response?.data ?? err.message)) : (err?.message || String(err));
+      const _msg = getUploadErrorMessage(err);
       showErrorToast(`Upload failed: ${_msg}`);
     }
   };
@@ -3247,7 +3248,7 @@ const handleNavigateToFolderLevel = useCallback(async (folderName: string, index
         const msg = axios.isAxiosError(err)
           ? (typeof err.response?.data?.message === "string" ? err.response?.data?.message : JSON.stringify(err.response?.data ?? err.message))
           : (err?.message || String(err));
-        showErrorToast(`Update failed: ${msg}`);
+        throw new Error(getUploadErrorMessage(err));
       }
       setUpdateFileId(null);
       clearUploadModalEditState();
@@ -3279,7 +3280,7 @@ const handleNavigateToFolderLevel = useCallback(async (folderName: string, index
             },
           );
         } catch (err: any) {
-          showErrorToast(`Rename failed: ${axios.isAxiosError(err) ? err.response?.data?.message : err.message}`);
+          throw new Error(getUploadErrorMessage(err));
         }
       }
       // 2. Apply any pending deletions of files inside this folder.
@@ -3383,10 +3384,8 @@ const handleNavigateToFolderLevel = useCallback(async (folderName: string, index
         // No success toast here — the modal already showed a single optimistic toast before closing.
       }
     } catch (err: any) {
-      const msg = axios.isAxiosError(err)
-        ? (typeof err.response?.data?.message === "string" ? err.response?.data?.message : JSON.stringify(err.response?.data ?? err.message))
-        : (err?.message || String(err));
-      showErrorToast(`Upload failed: ${msg}`);
+      // The modal owns failure state and must not treat this request as saved.
+      throw new Error(getUploadErrorMessage(err));
     }
   };
 
